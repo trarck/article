@@ -1,0 +1,153 @@
+from:http://www.claudxiao.net/2012/07/decrypt_app_in_ios5/
+
+按以往资料解密iOS5应用软件会遇到两个问题：
+
+    nm出来的符号里，没有start了，因此不知道在哪里下断点，即便下到常规的0×2000处，也会断不下来；
+    找到合适的断点后，gdb只要run就出现奇怪的错误，还是断不下来。
+
+下面以Douban.fm.ipa的解密为例，解决这两个问题，为了保持完整性，从头开始说明步骤。注意有的指令在Mac上运行，也有的指令在iOS上运行，根据命令提示符区分。在iOS上的默认路径是/var/mobile/Applications/79A81359-AD9D-4268-91FC-93D1E77F5208/Douban.fm.app/。
+1. 查看FAT信息
+claud@Mac$ otool -f Douban.fm
+Fat headers
+fat_magic 0xcafebabe
+nfat_arch 2
+architecture 0
+    cputype 12
+    cpusubtype 6
+    capabilities 0x0
+    offset 4096
+    size 1114560
+    align 2^12 (4096)
+architecture 1
+    cputype 12
+    cpusubtype 9
+    capabilities 0x0
+    offset 1122304
+    size 1121696
+    align 2^12 (4096)
+
+这里的几个信息：
+
+1) 有两个体系结构的代码，其中cputype均为12，即ARM，但cpusubtype不同，分别为6和9，对应ARMv6和ARMv7。在iOS 5.1设备上，均采用后者，即ARMv7。
+
+2) ARMv7代码的偏移是archoff = 1122304，大小是archsize = 1121696。
+2. 把ARMv7代码提取出来
+claud@Mac$ lipo -thin armv7 Douban.fm -output Douban.fm.armv7
+3. 查看这部分代码的加密信息
+claud@Mac$ otool -l Douban.fm.armv7 | grep CRYPT -A 4
+          cmd LC_ENCRYPTION_INFO
+      cmdsize 20
+    cryptoff  4096
+    cryptsize 876544
+    cryptid   1
+
+这里有几个信息：
+
+1) cryptid = 1，即是加密的
+
+2) 加密代码的偏移cryptoff = 4096 (0×1000)，加密代码的大小cryptsize = 876544 (0xd6000)
+4. 定位入口点
+claud@Mac$ otool -l Douban.fm.armv7 | grep __TEXT -A 3 -B 1 | head -12
+  cmdsize 600
+  segname __TEXT
+   vmaddr 0x00001000
+   vmsize 0x000d7000
+  fileoff 0
+--
+  sectname __text
+   segname __TEXT
+      addr 0x00002774
+      size 0x000aa9ec
+    offset 6004
+--
+
+这里有几个信息：
+
+1) __TEXT的加载地址vmaddr = 0×1000，加载后大小vmsize = 0xd7000
+
+2) __text节的加载地址entry = 0×2774（即为入口点地址）
+5. 安装兼容iOS 5的gdb调试器
+
+cydia官方源的gdb目前与iOS 5的兼容性存在问题，遇到断点是断不下来并且报错，出错信息是：
+../../gdb-1518/src/gdb/macosx/macosx-nat-mutils.c:772: internal-error: assertion failure in function "mach_xfer_memory": r_end &gt;= cur_memaddr
+
+下列源提供了完全兼容iOS 5的gdb：
+
+    cydia.radare.org
+
+在Cydia中添加这个源，然后更新gdb至最新的版本1708即可。
+6. 进入设备，用gdb解密
+iOS: root# gdb -q -e ./Douban.fm
+Reading symbols for shared libraries .. done
+(gdb) set sharedlibrary load-rules ".*" ".*" none
+(gdb) set inferior-auto-start-dyld off
+(gdb) set sharedlibrary preload-libraries off
+(gdb)
+
+这个时候有两种方法下断点，一是：
+(gdb) rb doModInitFunctions
+Breakpoint 2 at 0x2fe0cece
+__dyld__ZN16ImageLoaderMachO18doModInitFunctionsERKN11ImageLoader11LinkContextE;
+(gdb)
+
+二是下在前面看到的入口点地址上：
+(gdb) b *0x2774
+Breakpoint 1 at 0x2774
+(gdb)
+
+采用第二种，开始运行：
+(gdb) r
+Starting program: /private/var/mobile/Applications/79A81359-AD9D-4268-91FC-93D1E77F5208/Douban.fm.app/Douban.fm
+ 
+Breakpoint 1, 0x00002774 in ?? ()
+(gdb)
+
+已经断下了，可以看一下这时候入口点的代码：
+(gdb) x /10i 0x2774
+0x2774: 00 00 9d e5 ldr r0, [sp]
+0x2778: 04 10 8d e2 add r1, sp, #4 ; 0x4
+0x277c: 01 40 80 e2 add r4, r0, #1 ; 0x1
+0x2780: 04 21 81 e0 add r2, r1, r4, lsl #2
+0x2784: 07 d0 cd e3 bic sp, sp, #7 ; 0x7
+0x2788: 02 30 a0 e1 mov r3, r2
+0x278c: 04 40 93 e4 ldr r4, [r3], #4
+0x2790: 00 00 54 e3 cmp r4, #0 ; 0x0
+0x2794: fc ff ff 1a bne 0x278c
+0x2798: 18 c0 9f e5 ldr r12, [pc, #24] ; 0x27b8
+(gdb)
+
+即已经在内存中顺利解密。
+7. 将解密的数据dump下来
+
+首先要计算dump的地址。回过头去看一下，__TEXT的加载地址vmaddr = 0×1000，加密代码的偏移cryptoff = 0×1000，因此加密代码的起始地址为两者的和，即0×2000。又因为加密代码的大小cryptsize = 0xd6000，所以加密代码的结束地址为0×2000 + 0xd6000 = 0xd8000。所以这样dump:
+(gdb) dump memory Douban.fm.bin 0x2000 0xd8000
+(gdb)
+
+dump完毕以后就可以kill并quit gdb了。看一下我们dump下来的文件：
+iOS: root# ls -l Douban.fm*
+-rwxr-xr-x 1 mobile mobile 2244000 Jun 1 20:06 Douban.fm*
+-rw-r--r-- 1 root mobile 876544 Jul 1 12:06 Douban.fm.bin
+8. 拼凑解密文件
+
+我们来计算一下Douban.fm的文件布局，从而规划出应该怎么拼凑出解密后的文件Douban.fm.dec。
+
+第二个体系结构ARMv7代码的偏移是archoff = 1122304，大小是archsize = 1121696，加起来正好是2244000即Douban.fm的大小。其中，archoff之前的数据可以不管，照抄。
+
+在archoff之后，有cryptoff = 0×1000的数据是不加密的，这一部分也照抄。注意在这里vmaddr已经不用了，那个值只用于动态加载。
+
+接下来，有cryptsize = 0xd6000的代码是加密的，我们改用刚才dump下来的已解密数据。最后，还有一部分不加密的数据，大小是：archsize – cryptoff – cryptsize = 241056字节，这一部分也照抄原文件的。
+
+最后总结来看，即将dump出来的Douban.fm.bin，覆盖掉源文件偏移为1122304+0×1000 = 1126400开始的0xd6000 = 876544个字节即可，因此命令是：
+iOS: root# cp Douban.fm Douban.fm.dec
+iOS: root# dd bs=1 conv=notrunc if=Douban.fm.bin of=Douban.fm.dec skip=0 seek=1126400 count=876544
+
+这样，得到的Douban.fm.dec就是包含了解密代码的文件了。
+9. 修改加密标志位
+
+接下来需要修改ARMv7部分的cryptid位，使其为0。
+
+为此，我们需要搜索LC_ENCRYPTION_INFO这条load command指令的地址，用它的特征串即可，即搜索十六进制的2100000014000000。
+
+在整个Douban.fm.dec中可以找到两个，分别位于偏移6508和偏移1124716处，显然分别对应ARMv6和ARMv7两个代码，只考虑后面这个偏移，给它加上16，即在1124732处，是一个01，这就是cryptid的值，修改为00即可。
+
+后面用常规的去掉SC_Info和重新签名即可。
