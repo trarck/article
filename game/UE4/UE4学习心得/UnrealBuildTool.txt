@@ -1,0 +1,144 @@
+UnrealBuildTool.Main
+	->InitConfigurationClasses 配置类参数处理.
+	->DoPostStartupStuffThatCanAccessConfigs 具体的执行部分
+            -> 初始化Log
+            -> 设置线程相关变量
+            -> 设置生成工程文件相关变量
+			// 执行不同功能
+			-> GenerateProjectFiles 生成工程文件
+			-> CopyrightVerification 版权验证
+			-> AutoSDKOnly
+			-> ValidatePlatforms	验证平台
+			-> RunUBT 编译
+				-> UEBuildTarget.ParsePlatformAndConfiguration 处理平台和配置win64 win32 android develop game SHIPPING等
+				-> ParseCommandLineFlags 取得TargetSettings;
+				-> UEBuildTarget.ParseTargetCommandLine	生成TargetDescriptor列表
+					-> 处理Target Arguments  主要是Module和Plugin平台和配置类型，以及C++的自定义define
+				-> 加载UBT makefile
+				-> 生成BuildTarget列表
+					-> UEBuildTarget.CreateTarget( TargetDesc )
+						->  RulesCompiler.CreateTarget
+							-> CreateTargetRules
+								-> ConditionallyCompileAndLoadRulesAssembly 检查*.Target.cs生成的dll文件，如果存在则加载或则生成
+									-> 生成Target dll --- RulesAssembly
+								-> RulesAssembly.CreateTargetRules		
+									-> 检查存不存在Target
+									-> GetTargetTypeAndRulesInstance 取得Target.cs生成的类 继承自TargetRules
+							-> 根据TargetRules生成UEBuildTarget
+				-> 处理BuildTarget列表
+					-> Target.Build
+						-> PreBuildSetup
+							-> SetupGlobalEnvironment
+							-> SetupModules	是否有额外Module
+							-> SetupBinaries  生成AppBinaries，
+								-> 调用Target.cs中实现TargetRules.SetupBinaries生成UEBuildBinaryConfiguration列表。
+								-> 根据UEBuildBinaryConfiguration是否有Module来生成UEBuildBinaryCPP或者UEBuildBinaryCSDLL，添加到AppBinaries
+								-> UEBuildTarget子类默认添加一个UEBuildBinaryCPP到AppBinaries。如果不默认添加，则Target.cs中的TestCppTarget反回TargetType.Program，则创建UEBuildTarget而不创建UEBuildTarget的子类
+							-> SetupPlugins
+								-> 取得引擎和当前工程下的所有插件，保存为ValidPlugins
+								-> 移除不是当前平台下的插件
+								-> 读取项目文件*.uproject,并根据uproject里的插件设置，把启用的插件添加到EnabledPlugins。
+								-> 根据TargetRules里的AdditionalPlugins，从插件列表里取出，添加到EnabledPlugins。
+								-> 根据条件生成BuildPlugins
+								-> 把ForeignPlugins添加到插件列表和BuildPlugins
+							-> 处理BuildPlugins
+								-> AddPlugin
+									-> 把Plugin用到的Module生成一个UEBuildBinaryCPP添加到AppBinaries。
+							-> check output directory
+							-> AddExtraModules
+							-> AddPrecompiledModules
+							-> 处理AppBinaries，执行每个元素BindModules
+								-> BindModules 主要是UEBuildBinaryCPP类有用
+									-> 把Module的Binary指用UEBuildBinary自身
+							-> ProcessUnboundModules	
+								-> RecursivelyProcessUnboundModules 处理Module的依赖Module，只有UEBuildModuleCPP才会执行实际逻辑。
+							-> FixBundleBinariesPaths 是否需要
+							-> 处理OnlyModules
+							-> 过虑AppBinaries，去除不需要重新编译的，静态库
+							-> 处理OnlyPlatformSpecificFor
+							-> 过虑Rocket时，只保留项目里用的UEBuildBinary
+						-> 处理CompileMonolithic
+							-> 取得AppBinaries第一项(工程Module)所依赖的AllReferencedModules
+							-> 把 没有绑定BuildBinary 或 绑定BuildBinary是自己 或 绑定BuildBinary不是自己但是静态库，添加到第一个BuildBinary的Modules里去。(这就是C++的项目，要编译整个UE4引擎代码的原因)
+						-> 环境设置
+						-> 如果设置GenerateExternalFileList，则执行GenerateExternalFileList，返回
+						-> PrepareReceipt 生成一个xml,目录用途不明
+						-> 如果是生成Manifest或CleanProject,执行GenerateManifest,如果不是bXGEExport返回
+						-> 处理generated。C++里反射宏定义的选项
+						-> 生成AppBinaries
+							->Binary.Build	生成ActionGraph的Action
+						
+						
+总结：
+
+	1.参与编译的Module
+		项目的Module，插件的Module，这些Module依赖的Module。
+		
+	2.Module的编译问题
+		项目的Module, 必编译
+		插件的Module, 如果插件目录有cpp文件，则要编译。如果是Rocket模式则不编译(指定了Rocket后，会过虑一切不是项目目录下的Module)。
+		依赖的Module, 默认和在项目目录则编译，如果指定UsePrecompiled或在Rocket模式下，则不编译。
+		
+	3.关于AppName
+		默认使用TargetName,如果指定了InPossibleAppName，且TargetRules的ShouldUseSharedBuildEnvironment函数返回true，则使用InPossibleAppName
+		InPossibleAppName由TargetType决定。
+		TargetType.Game		"UE4"
+		TargetType.Editor	"UE4Editor"
+		TargetType.Client	"UE4Client"
+		TargetType.Server	"UE4Server"
+		TargetType.Program	null		
+		
+	4.CompileMonolithic
+	    主要由TargetRules的ShouldCompileMonolithic决定。
+		默认值是：
+			如果命令行指定-monolithic，则true.
+			如果没有指定-monolithic，Module不是EditorType,命令行选项没有指定-modular，则true
+			其它情况为false		
+		功能一:决定是否生成exe文件(通常是BuildTarget的子类的默认生成，Target的第一个AppBinaries)，如果是true,则生成exe,false，则不生成。
+		
+	5.生成静态库
+		使用-Precompile则会生成UE4各模块的静态库。
+		在PreBuildSetup里的AddPrecompiledModules中才会执行预编译模块的加载。
+		
+	6.关于项目文件会编译整个UE4引擎的问题
+		自己编译的UE4引擎，在使用C++项目的时候，在编译的时候会对整个UE4引擎的源文件编译一遍。
+		主要原因是，编译UE4引擎时只生成了动态库,C++项目在链接时会有问题，所以就整个源码build一遍。
+		具体过程为：
+			在项目的BuildTarget里的AppBinaries的第一项存的是项目的编译目标。
+			在Target执行Build的时候会把所有依赖的Module添加到项目BuildBinary的Modules里。
+			在Binary Compile的时候会遍历Modules,把Module的Binary为空或是自己的Module的Compile结果添加进编译环境中。
+		如果UsePrecompiled为false，则不会加载Module的Binary，在ProcessUnboundModules时候，调用UEBuildBinary的RecursivelyProcessUnboundModules的时候，会把Module添加到项目的BuildBinary中。
+		UsePrecompiled 当指定-USEPRECOMPILED命令行选项或为Rocket环境为true
+		当UsePrecompiled为true时，会触发Target的AddPrecompiledModules,创建Module的Binary并加入到AppBinaries，然后在BindModules的时候进行绑定。
+		这一切需要Module的静态库。
+		解决方法：			
+			步骤：
+				1.为引擎编译静态库
+				2.在引擎的Engine\Build下建立一个InstalledBuild.txt
+				
+				
+	7.编码问题
+		在编译静态库的时候，引用到的第三方库的头文件中有特殊字符。会出C4819警告，而UE4在windows下通过WindowsPlatformCompilerSetup.h文件的#param warning(error:),把警告做为错误导致编译不通过。可以通过CL的环境变量CL或_CL_来设置编译时用的字符集。SET _CL_=/source-charset:.20127，此时会出新的警告C4828，这个警告信息又查不到。由于#param warning的级别最高，无法在外部覆盖，所以只能修改WindowsPlatformCompilerSetup.h，去掉C4819,C4828做错误。
+		
+	8.调试信息(Debug Info.Debug symbol)
+		默认是开启生成调试信息的，对应BuildConfiguration.bDisableDebugInfo属性。
+		可以通过命令行参数-nodebuginfo和-forcedebuginfo来设置值。最后会转成GlobalCompileEnvironment.Config.bCreateDebugInfo属性。
+		Windows平台，默认把调试信息存放到.obj文件中，对应的编译选项是/Z7。放在.obj中，会导致静态库很大。
+			如果要把调试信息放在pdb在，则修改全局配置文件中的bUsePDBFiles。
+			在VCToolChian里说把调试信息放在PDB会出现断点不准的问题。
+		
+	9.全局的构建配置BuildConfiguration
+		默认是保存在xml中，再XmlConfigLoader中有说明。	
+		保存在4个地方，要修改默认配置值，在c或d处建立一个同名的文件。(加载顺序为a,b,c,d，后面会覆盖前面)。
+		a. UE4/Engine/Programs/UnrealBuildTool
+		b. UE4/Engine/Programs/NotForLicensees/UnrealBuildTool
+		c. UE4/Engine/Saved/UnrealBuildTool
+		d. My Documents/Unreal Engine/UnrealBuildTool
+	10.库的依赖路径
+		UE4BuildBinary中的SetupDependentLinkEnvironment函数处理库的依赖路径。
+		静态库或Mac或Linux下使用输出路径,通常是工程可执行目录;其它使用IntermediateDirectory(build对应的目录，临时的)。
+		动态库的静态编译库存在IntermediateDirectory目录中，并没有拷贝到引擎中。
+		通常Game和Shipping使用静态库，Editor使用动态库。
+	11.UE4.12.x编译Android多个arch出错
+		注释掉UEBuildAndroid中的UEBuildBinary函数内的Debug.Assert(InConfig.OutputFilePath != null && InConfig.IntermediateDirectory != null);
+		主要是InConfig.OutputFilePath只允许一个办出目标，而这里正好调用，从而触发异常。

@@ -1,0 +1,11 @@
+[LaunchWindows.cpp]WinMain()
+->[Launch.cpp]GuardedMain()->EngineTick()
+->[LaunchEngileLoop.cpp]EngineLoop::Tick()->FPlatformMisc::PumpMessages(true)
+->[WindowsPlatformMisc.cpp]GetWindowThreadProcessId(GetForegroundWindow(), &ForegroundProcess)->WinPumpMessages()
+->[WindowsApplication.cpp]WindowsApplication->ProcessMessage( hwnd, msg, wParam, lParam )->DeferMessage(CurrentNativeEventWindowPtr, hwnd, msg, wParam, lParam )->ProcessDeferredMessage( FDeferredWindowsMessage( NativeWindow, InHWnd, InMessage, InWParam, InLParam, MouseX, MouseY, RawInputFlags ) )->MessageHandler->OnMouseDown( CurrentNativeEventWindowPtr, EMouseButtons::Left )
+->[SlateApplication.cpp]SlateApplication::OnMouseDown()->ProcessMouseButtonDownEvent( PlatformWindow, MouseEvent )->RoutePointerDownEvent(WidgetsUnderCursor, MouseEvent)-> FEventRouter::Route<FReply>(this, FEventRouter::FBubblePolicy(WidgetsUnderPointer), PointerEvent, [this] (const FArrangedWidget TargetWidget, const FPointerEvent& Event)->Lambda( ArrangedWidget, TranslatedEvent ).SetHandler( ArrangedWidget.Widget )->TargetWidget.Widget->OnMouseButtonDown(TargetWidget.Geometry, Event)
+->[ViewPort.cpp][SViewport::OnMouseButtonDown]iewportInterface.Pin()->OnMouseButtonDown(MyGeometry, MouseEvent)
+->[SceneViewport.cpp][FSceneViewport::OnMouseButtonDown]ViewportClient->InputKey(this, InMouseEvent.GetUserIndex(), InMouseEvent.GetEffectingButton(), IE_Pressed)
+->[GameViewportClient.cpp][UGameViewportClient::InputKey]TargetPlayer->PlayerController->InputKey(Key, EventType, AmountDepressed, bGamepad)
+->[PlayerControlle.cpp]PlayerInput->InputKey(Key, EventType, AmountDepressed, bGamepad)
+

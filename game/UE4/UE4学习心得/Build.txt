@@ -1,0 +1,15 @@
+主要文件
+	Engine\Source\Developer\DesktopPlatform\Private\DesktopPlatformBase.cpp 中
+
+API Version Engine/Build/Build.version
+
+1.构建静态库
+在通常的项目上加上 -PRECOMPILE
+
+
+
+
+2.关于Rocket
+如果加入命令行参数-Rocket，则不会处理引擎Programs相关的东西。
+从Lanch下载的UnrealEngine 在Engine/Build/下会有个Rocket.txt文件，表示使用Rocket。比如在生成工程文件和编译项目时自动加入-Rocket选项。
+关于使用Rocket的条件(目前只是猜测)，官方下的Editor会有静态库，在编译有c++项目时，直接使用静态库(具体怎么使用还没看)。如果没有静态库，之前又没有编译的Obj文件，要编译整个UE工程。如果不小心改了引擎，则还要整个编译，可能是引擎变了，所有依赖项都要编译。

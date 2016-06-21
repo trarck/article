@@ -1,0 +1,5 @@
+1.输入事件丢失
+	c++的InputBinding有二个属性，其中bConsumeInput表示当前事件会不会被吞掉(独占)，用来控制事件会不会传递。
+	
+2.VR中相机不转动
+	如果给一个Pawn增加一个CameraComponent，默认不能控制相机转动。只有勾选相机组件的UsePawnControlRotation相机才能正常转动。
