@@ -1,0 +1,67 @@
+在mac上构建ios的库要在configure加一堆参数，可以使用脚本来简化工作。
+
+主要是设置configure的host选项 
+    通常有
+        i386    -->   i386-apple-darwin     
+        x86_64  -->   x86_64-apple-darwin 
+        arm64   -->   arm-apple-darwin     
+        armv7s  -->   armv7s-apple-darwin 
+        armv7   -->   armv7-apple-darwin   
+    只要保持xxx-apple-darwin就可以了，起作用的貌似apple-darwin。
+
+然后设置CFLAGS,CXXFLAGS,CPPFLAGS,LDFLAGS变量，加入ios的编译选项-arch,-isysroot,-miphoneos-version-min,-fembed-bitcode等
+-arch通常为arm64 armv7s x86_64 i386 armv7
+-isysroot为xcode中的sdk目录
+    模拟器(i386,x86_64)目录为对应   /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk
+    真机(armv7,armv7s,arm64)目录    /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk
+    
+-miphoneos-version-min为ios最小目录
+
+-fembed-bitcode  是否开起ENABLE_BITCODE功能。对于iOS的应用来说，Bitcode是可选的，但对于新的watchOS而言，它是必须的。
+
+
+下面为示例 build_ios.sh
+
+#!/bin/bash
+
+export DEVROOT=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain
+function build_for_arch() {
+  ARCH=$1
+  HOST=$2
+  SYSROOT=$3
+  PREFIX=$4
+  IPHONEOS_DEPLOYMENT_TARGET="6.0"
+  export PATH="${DEVROOT}/usr/bin/:${PATH}"
+
+  //FLAGS as env
+  export CFLAGS="-arch ${ARCH} -pipe -Os -gdwarf-2 -isysroot ${SYSROOT} -miphoneos-version-min=${IPHONEOS_DEPLOYMENT_TARGET} -fembed-bitcode"
+  export LDFLAGS="-arch ${ARCH} -isysroot ${SYSROOT}"
+  ./configure --disable-shared --enable-static --enable-ipv6 ${SSL_FLAG} --host="${HOST}" --prefix=${PREFIX} && make -j8 && make install
+  
+  //FLAGS as options
+  #./configure --disable-shared --enable-static --enable-ipv6 ${SSL_FLAG} --host="${HOST}" --prefix=${PREFIX} \
+  #  CFLAGS="-arch ${ARCH} -pipe -Os -gdwarf-2 -isysroot ${SYSROOT} -miphoneos-version-min=${IPHONEOS_DEPLOYMENT_TARGET} -fembed-bitcode" \
+  #  LDFLAGS="-arch ${ARCH} -isysroot ${SYSROOT}" 
+  #make -j8 && make install
+  
+}
+
+BUILD_DIR=build_ios
+mkdir -p BUILD_DIR
+
+build_for_arch i386 i386-apple-darwin /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk ${BUILD_DIR}/i386 || exit 1
+build_for_arch x86_64 x86_64-apple-darwin /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk ${BUILD_DIR}/x86_64 || exit 2
+build_for_arch arm64 arm-apple-darwin /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk ${BUILD_DIR}/arm64 || exit 3
+build_for_arch armv7s armv7s-apple-darwin /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk ${BUILD_DIR}/armv7s || exit 4
+build_for_arch armv7 armv7-apple-darwin /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk ${BUILD_DIR}/armv7 || exit 5
+
+mkdir -p ${BUILD_DIR}/lib/
+${DEVROOT}/usr/bin/lipo \
+	-arch i386 ${BUILD_DIR}/i386/lib/libcurl.a \
+	-arch x86_64 ${BUILD_DIR}/x86_64/lib/libcurl.a \
+	-arch armv7 ${BUILD_DIR}/armv7/lib/libcurl.a \
+	-arch armv7s ${BUILD_DIR}/armv7s/lib/libcurl.a \
+	-arch arm64 ${BUILD_DIR}/arm64/lib/libcurl.a \
+	-output ${BUILD_DIR}/lib/libcurl.a -create
+
+cp -r ${BUILD_DIR}/armv7s/include ${BUILD_DIR}/
