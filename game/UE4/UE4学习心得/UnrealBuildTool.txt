@@ -140,5 +140,5 @@ UnrealBuildTool.Main
 		动态库的静态编译库存在IntermediateDirectory目录中，并没有拷贝到引擎中。
 		通常Game和Shipping使用静态库，Editor使用动态库。
 	11.UE4.12.x编译Android多个arch出错
-		注释掉UEBuildAndroid中的UEBuildBinary函数内的Debug.Assert(InConfig.OutputFilePath != null && InConfig.IntermediateDirectory != null);
-		主要是InConfig.OutputFilePath只允许一个办出目标，而这里正好调用，从而触发异常。
+		注释掉UEBuildBinary中的UEBuildBinary函数内的Debug.Assert(InConfig.OutputFilePath != null && InConfig.IntermediateDirectory != null);
+		主要是InConfig.OutputFilePath只允许一个输出目标，而这里正好调用，从而触发异常。

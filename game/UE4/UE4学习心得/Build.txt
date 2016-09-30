@@ -1,15 +1,20 @@
-主要文件
-	Engine\Source\Developer\DesktopPlatform\Private\DesktopPlatformBase.cpp 中
+发布版
+通过Epic Games Launcher下载的ue4editor在编译程序时，只会编译项目相关的源文件，引擎相关的文件则使用预编译好的静态库。这样这不会在引擎有改动或编译缓存被清除时重新编辑整个引擎相关的代码。
 
-API Version Engine/Build/Build.version
+4.11及以前使用rocket来表示，4.12以后使用install来表示。4.12之后更规范。
 
-1.构建静态库
-在通常的项目上加上 -PRECOMPILE
+4.11：
+1.直接使用命令行参数-Rocket。这样编译项目时认为引擎是静态库。
+2.在Engine/Build/下建立一个Rocket.txt文件，表示使用Rocket。此时在生成工程文件和编译项目时自动加入-Rocket选项。
+说明：如果使用了-rocket参数，但是引擎没有静态库，不会出错，但是会重新编译引擎。
 
-
-
-
-2.关于Rocket
-如果加入命令行参数-Rocket，则不会处理引擎Programs相关的东西。
-从Lanch下载的UnrealEngine 在Engine/Build/下会有个Rocket.txt文件，表示使用Rocket。比如在生成工程文件和编译项目时自动加入-Rocket选项。
-关于使用Rocket的条件(目前只是猜测)，官方下的Editor会有静态库，在编译有c++项目时，直接使用静态库(具体怎么使用还没看)。如果没有静态库，之前又没有编译的Obj文件，要编译整个UE工程。如果不小心改了引擎，则还要整个编译，可能是引擎变了，所有依赖项都要编译。
+4.12：
+配置安装项
+在Engine/Config/BaseEngine.ini中加入[InstalledPlatforms]项
+并加入配置InstalledPlatformConfigurations对应UnrealBuildTool/System/InstalledPlatformInfo.cs中的InstalledPlatformConfiguration类型。
++InstalledPlatformConfigurations=(PlatformName="Win64", Configuration="DebugGame", PlatformType="Game", RequiredFile="Engine\Binaries\Win64\UE4Game.target", ProjectType="Any", bCanBeDisplayed=False)
++InstalledPlatformConfigurations=(PlatformName="Win64", Configuration="Development", PlatformType="Game", RequiredFile="Engine\Binaries\Win64\UE4Game.target", ProjectType="Any", bCanBeDisplayed=False)
++InstalledPlatformConfigurations=(PlatformName="Win64", Configuration="Shipping", PlatformType="Game", RequiredFile="Engine\Binaries\Win64\UE4Game-Win64-Shipping.target", ProjectType="Any", bCanBeDisplayed=False)
+二种使用方式：
+1.直接使用-installed参数，4.12之后去掉了rocket,直接使用installed.
+2.在Engine/Build/下建立一个InstalledBuild.txt文件。此时在生成工程文件和编译项目时自动加入-installed选项。
