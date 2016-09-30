@@ -1,4 +1,4 @@
-url:http://www.360doc.com/content/13/0801/09/7775902_303961368.shtml
+
 今天查看了linux下的实时线程，FIFO和RR策略的调度，遇到一个问题：
 
      priority越大优先级越高呢？还是越小越高呢？
@@ -42,4 +42,8 @@ http://bbs.chinaunix.net/thread-1996337-1-1.html
     平均等待时间sleep_avg既决定了进程优先级，又影响了进程交互程度。
     进程的平均等待时间（以nanosecond 为单位），在0 到NS_MAX_SLEEP_AVG 之间取值，初值为0。
     这个值是动态优先级计算的关键因子，sleep_avg 越大，计算出来的进程优先级也越高（数值越小）。
-                
+
+url:http://www.360doc.com/content/13/0801/09/7775902_303961368.shtml
+    
+android下查看线程优先级命令
+adb shell ps -t -p             
