@@ -1,0 +1,28 @@
+1.签名问题
+    构建development版本要使用Developer的签名，Distribute会出错。
+2.ssh下调用xcodebuild
+    在签名的时候会报User interaction is not allowed.错误，由于安全机制，在访问签名文件要确认，而ssh不能打开界面。
+    解决方法参考http://www.egeek.me/2013/02/23/jenkins-and-xcode-user-interaction-is-not-allowed/
+    在mac上执行
+        security unlock-keychain ${HOME}/Library/Keychains/login.keychain
+    来解除keychain的锁定。
+    如果还行设置签名的秘钥的"访问控制"改为"允许所有应用程序访问"
+            Open the Keychain Access
+            Right click on the private key
+            Select "Get Info"
+            Select "Access Control" tab
+            Click "Allow all applications to access this item"
+            Click "Save Changes"
+            Enter your password
+            Enjoy
+3.出现找不到签名的错误
+    Code Sign error: No codesigning identities found: No codesigning identities (i.e. certificate and private key pairs)
+    把Login中的签名移动System中，并设置私钥允许所有应用访问。
+            
+4.一些错误解决方法
+    a.“Code Sign error: Provisioning profile ‘xxxxx-xxxx-xxxx-xxxxx’ can’t be found”  (Mobile provisioning problem): if your Jenkins can’t build because of lacking provisioning profiles, even after you have uploaded them – just login as jenkins user (on your Mac) and import the provisioning profiles. Another way is to copy the provisioning profiles to the jenkins directory: /Users/Shared/Jenkins/Library/MobileDevice/Provisioning Profile
+    b.“Code Sign error: There are no valid certificate/private key pairs in the default keychain” (Keychain access) The Jenkins user cannot access your iPhone developer certificate. One way to solve it is to open Keychain, copy the certificate from login to System (iPhone Developer and iPhone Distribution).
+    c.“Code Sign error: No matching provisioning profiles found: No provisioning profiles with a valid signing identity (i.e. certificate and private key pair) matching both the team ID ? and the bundle identifier? were found”.The issue is the Team ID (which is stored in the .pbxproj file) – to change this, we need to change General – Identity – Team (same section, just below Bundle Identifier/ Version / Build)  to the correct team in the provisioning profile. Leaving a Team as None is also an option.
+    d.Code Sign error: No codesigning identities found: No codesigning identities (i.e. certificate and private key pairs) that match the provisioning profile specified in your build settings (‘…v28’) were found.This is a case of duplicate iPhoneDeveloper certificate – while the provisioning profile appears to belong to FelixHa, but actually there are 2 FelixHa certificates in the database.
+    e.Code Sign error: No matching provisioning profiles found: No provisioning profiles matching the bundle identifier ‘…’ were found. Just need to go to Manage Jenkins – Keychain & Prov.Profiles Mngmt – upload the above provisioning profiles – and remove the old ones (Save after removing). Then go in Job Config – Build Environment & choose the correct prov.profile:Screen Shot 2014-10-16 at 4.53.14 pm
+
