@@ -1,0 +1,4 @@
+在Runtime\Launch\Resources\Version.h中定义
+ENGINE_MAJOR_VERSION //主版本号
+ENGINE_MINOR_VERSION //次版本号
+ENGINE_PATCH_VERSION //补丁号

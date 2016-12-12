@@ -1,0 +1,6 @@
+UNavigationSystem::Tick
+	-> ANavigationData::TickAsyncBuild
+		->FRecastNavMeshGenerator::TickAsyncBuild
+			->FRecastNavMeshGenerator::ProcessTileTasks
+				->FRecastNavMeshGenerator::AddGeneratedTiles
+					->dtNavMesh::addTile //这里添加的Tile Data就是FRecastTileGenerator::GenerateNavigationData生成的NavData。通过FNavMeshTileData进行包装。
