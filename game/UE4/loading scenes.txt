@@ -1,0 +1,105 @@
+Several methods for making loading screen, would like some suggestions and idea-sharings
+
+    I've tried several methods but all of them are not perfect, I'm posting them below and looking for some suggestions, better ideas, etc.
+
+    The fade out to black effect can be applied for all methods, you can make a Blueprint UserWidget with fade to black animation.
+    Then, before calling Open Level or the equivalent action, create this widget and delay for the time of fade out, so the screen would be pure black when you are ready to go to next level.
+    However the fade in from black is not always applicable, details in below.
+
+    1. [Blueprint] Black screen + Open Level
+
+    Actually this is a do nothing, just use the fade out widget mentioned above, then use Open Level.
+
+    Pros:
+
+        The easiest one.
+        All dynamic actors are cleared by UE.
+        You can use different GameMode and PlayerController for each level, since all levels are fresh-started.
+        Fade in can be done in level BP's BeginPlay() and it's easy, since the screen is already black.
+
+
+
+
+    Cons:
+
+        Black screen is just not enough.
+
+
+
+
+    Note:
+    The screen is actually frozen when it's black, but user see nothing so it's fine.
+
+    2. [Blueprint and C++] Switch to loading movie + Open Level
+
+    Basically following this tutorial https://wiki.unrealengine.com/Loading_Screen
+    You need a C++ written GameInstance, bind Pre Load Map event, and call the MoviePlayer when Pre Load Map triggers.
+    Then, in Blueprint, call Open Level then Pre Load Map is fired, so the loading screen is fired.
+
+    Pros:
+
+        All dynamic actors are cleared by UE.
+        You can use different GameMode and PlayerController for each level, since all levels are fresh-started.
+        The loading screen is rendered by another thread, so it runs very smoothly.
+
+
+
+
+    Cons:
+
+        The loading screen, actually a SWidget, played by MoviePlayer is not rendering in Stereo, so it looks not nice (or, not acceptable) in VR.
+        Not to mention, SWidget can only be created by C++.
+        No proper timing for Fade in effect; The end of loading screen stop immediately so there no timing for fade out, thus no fade in.
+
+
+
+
+    3. [Blueprint] Transition Map (Seamless Travel) + Console Command "ServerTravel"
+
+    There's a flag in GameMode called Use Seamless Travel, make it True.
+    Then create a small level with any visual effects you like, it would serve the loading screen.
+    In Project Settings/Maps and Modes/Transition Map, set the level just created.
+    Now, use Execute Console Command node with "ServerTravel NextLevel" instead of Open Level node with "NextLevel".
+    Player would be put into Transition Map (i.e. Loading Screen) and wait for the loading.
+
+    Pros:
+
+        All dynamic actors are cleared by UE.
+        The loading screen is a normal level, so it renders correctly in VR, also you can put anything you like here.
+
+
+
+
+    Cons:
+
+        You can NOT use different GameMode and PlayerController for each level, since they are copied to the next level.
+        No proper timing for Fade in effect; The end of loading screen stop immediately so there no timing for fade out, thus no fade in.
+
+
+
+
+    4. [Blueprint] Stream Level + Load Stream Level
+
+    Well the stream level mechanism.
+
+    Pros:
+
+        Fade out/in timing are well controlled since unload/load level are all manually controlled.
+
+
+
+
+    Cons:
+
+        All dynamic actors are NOT cleared by UE, need manually control.
+        You can NOT use different GameMode and PlayerController for each level, since they are always the same.
+        Even with the name of streaming, there's still occasional freezing.
+
+
+
+
+    These are all I tried, none of them are perfect, so I'm really not sure which one is better.
+    Thanks! 
+
+[https://forums.unrealengine.com/showthread.php?99417-Several-methods-for-making-loading-screen-would-like-some-suggestions-and-idea-sharings]
+[https://wiki.unrealengine.com/Loading_Screen]
