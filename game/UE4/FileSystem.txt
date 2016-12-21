@@ -1,0 +1,6 @@
+IFileManager是文件系统对外的接口。主要是包装了IPlatformFile的相关接口
+FPlatformFileManager 主要是平台相关文件系统的管理器。 主要是对IPlatformFile的操作。
+FFileManagerGeneric是IFileManager的实现。并通过GetLowLevel来取得IPlatformFile，实际是访问FPlatformFileManager::Get().GetPlatformFile()
+所以最好是访问IFileManager的相关函数对文件进行操作。
+IPlatformFile使用了装饰者模式，对其它IPlatformFile进行包装。具体是在LaunchEngineLoop的LaunchCheckForFileOverride进行初始化的。
+比如Android用FPlatformFileManager::Get().GetPlatformFile()取得的是IPlatformFilePak，其内引用了FAndroidPlatformFile。
