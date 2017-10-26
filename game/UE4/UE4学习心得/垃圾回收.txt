@@ -1,0 +1,20 @@
+1.垃圾回收主要处理流程
+CollectGarbageInternal
+    ->FRealtimeGC.PerformReachabilityAnalysis
+        ->FRealtimeGC.MarkObjectsAsUnreachable
+        ->TFastReferenceCollector.CollectReferences //FGCReferenceProcessorMultithreaded or FGCReferenceProcessorSinglethreaded
+            ->TFastReferenceCollector.ProcessObjectArray  //单线程是在主线程执行改函数，多线程是在多个线程执行改函数。多线程处理的内容是按线程数平均分配的内容。
+                ->处理对象所在类的ReferenceTokenStream属性，保存的内容是声明类的时候带有UPROPERTY的属性信息。它是一个数组，数据类型为FGCReferenceInfo。参见[AActor的ReferenceTokenStream.txt]
+                ->遍历ReferenceTokenStream，根据ReferenceInfo.Type进行相应的处理。有些是系统内部添加的信息。
+                    ->GCRT_Object://直接引用的对象对应的声明为：UPROPERTY() 
+                                                                UTestGCObject* OneObject;
+                                                                     
+                     ->GCRT_ArrayObject://带UPROPERTY的TArray                                                            
+                     
+                     //TokenStream->ReadPointer(TokenStreamIndex)会改变TokenStreamIndex值。
+                     ->GCRT_AddReferencedObjects://系统内置的类型。指向一个函数，定义为void(*AddReferencedObjects)(UObject*, FReferenceCollector&)。
+                                                 //默认为UObject::AddReferencedObjects，注意它是静态方法，这样才能取到其地址。UObject的子类可以实现类似的静态方法。
+                                                 //其中Actor的AddReferencedObjects方法是把OwnedComponents加入引用中，也就是说添加到Actor的Component，即使没有AddToRoot也不会被回收。
+                                                 //也就是说，Actor里声明一个到自己的Component的引用是不用加UPROPERTY()标识的。
+                     ->GCRT_AddTMapReferencedObjects://带UPROPERTY的TMap
+                     ->GCRT_AddTSetReferencedObjects://带UPROPERTY的TSet
