@@ -1,0 +1,20 @@
+1.Checkout LLVM:
+    cd where-you-want-llvm-to-live
+    git clone https://git.llvm.org/git/llvm.git/
+2.Checkout Clang:
+    cd llvm/tools
+    git clone https://git.llvm.org/git/clang.git/
+
+3.Checkout Extra Clang Tools
+    cd llvm/tools/clang/tools
+    git clone https://git.llvm.org/git/clang-tools-extra.git/ extra
+
+4.Checkout Compiler-RT (required to build the sanitizers) [Optional]:
+    cd llvm/projects
+    git clone https://git.llvm.org/git/compiler-rt.git/
+
+5.Checkout libcxx and libcxxabi [Optional]:
+    cd llvm/projects
+	git clone https://git.llvm.org/git/libcxx.git/
+	git clone https://git.llvm.org/git/libcxxabi.git/
+
