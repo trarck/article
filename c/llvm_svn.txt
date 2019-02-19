@@ -1,0 +1,20 @@
+1.Checkout LLVM:
+    cd where-you-want-llvm-to-live
+    svn co http://llvm.org/svn/llvm-project/llvm/trunk llvm
+2.Checkout Clang:
+    cd llvm/tools
+    svn co http://llvm.org/svn/llvm-project/cfe/trunk clang
+
+3.Checkout Extra Clang Tools
+    cd llvm/tools/clang/tools
+    svn co http://llvm.org/svn/llvm-project/clang-tools-extra/trunk extra
+
+4.Checkout Compiler-RT (required to build the sanitizers) [Optional]:
+    cd llvm/projects
+    svn co http://llvm.org/svn/llvm-project/compiler-rt/trunk compiler-rt
+
+5.Checkout libcxx and libcxxabi [Optional]:
+    cd llvm/projects
+    svn co http://llvm.org/svn/llvm-project/libcxx/trunk libcxx
+    svn co http://llvm.org/svn/llvm-project/libcxxabi/trunk libcxxabi
+

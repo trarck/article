@@ -1,0 +1,9 @@
+工具下载地址：https://www.tangiblesoftwaresolutions.com/
+1.使用DnSpy把Java to C# Converter.exe文件反编译成vs工程。生成的switch会有问题。
+2.使用.net reflector把Java to C# Converter.exe源代码导出。
+3.运行DnSpy生成的工程。把错误的文件使用.net reflector生成的源代码替换。直到解决所有错误。
+4.在frmMain.cs的Main函数中有个
+	App._g13 = !App.Copyright_Tangible_Software_Solutions_g30();这样的检查注册用户。
+	_g13=true表示free版本，false表示正示版本。
+	主要修改Copyright_Tangible_Software_Solutions_g30使其反回true.
+5.编译生成release版本。	

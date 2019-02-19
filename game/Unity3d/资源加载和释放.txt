@@ -1,0 +1,7 @@
+1.Resources里Load的资源可以UnloadAsset指定释放，也可以在UnloadUnusedAssets时一起释放。
+2.Resources里Load的资源，如果赋值给还存在对象(内置对象或继承MonoBehaviour的类)的属性，则UnloadUnusedAssets时，不会删除。
+3.Resources.UnloadAsset和UnloadUnusedAssets，可以释放AssetBundle.Load的资源。
+4.Resources.UnloadUnusedAssets无法释放AssetBundle.
+5.AssetBundle.Unload的参数和文档说明一致。true时，AssetBundle和load出来的资源都被释放。false时，只释放AssetBundle，而其load的资源还是可以通过UnloadUnusedAssets释放。
+6.AssetBundle被释放后，如果再调用Load会出错。
+7.AssetBundle.Load出来的资源，在被释放后，再调用AssetBundle.Unload(true)并没有影响。
