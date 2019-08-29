@@ -1,0 +1,43 @@
+在Android机器无法Root下,按照指导文件中的非Root方法进行操作，最后pc上的调试器无法接收到数据。
+首先来分析下非Root下的工作原理：
+1.Daemon服务。
+    内置于MGD.apk(libcom.arm.mgd.mgddaemon.so)或独立的可执行文件(mgddaemon)[主要用于root]
+    负责和PC上的调试器以及集成到游戏内的Interceptor进行交互。
+2.PC上的调试器
+    打开调试器看到的软件
+3.Interceptor截获gl函数。
+    在非Root下存在于libMGD.so中，就是要放入游戏的动态库。
+    Interceptor截获的数据传给Daemon，Daemon再传给PC.这里就不能直接传到PC上吗？可能是兼容Root。
+    Interceptor还有个功能,把数据保存到手机的sd卡里，叫Headless。要License(需要够买)才能在PC上打开。
+    如果有License建议直接使用Headless模式，按非Root相关步骤操作好，最后把数据从SD卡上Pull下来，在用PC上的工具打开查看。
+    就不用看后面麻烦的操作了。
+    
+Daemon和PC之间可以通过adb或ip进行通信。
+Daemon和Interceptor之间是用socket通信。
+Interceptor和PC之间似乎不通信(仅猜测，没做详细分析，如果能直接把数据发到pc上就不会出问题)。
+接下来找找原因。PC和手机之间不论通过adb或ip通信，在非Root机器上是没限制的。
+Daemon和Interceptor属于二个应用的子线程，由于SELinux的限制，导致访问出错(本地二个应用间的socket不能通信，用LocalSocket可以，网上有人试过)。
+现在只要解决Daemon和Interceptor之间的通信问题，PC上应该就可以接收数据了。
+解决方法：Daemon也加入到游戏里，使Daemon和Interceptor属于同一个进程，就不受SELinux的影响了。
+1.用Android Studio新建立一个模块，带一个简单layout,放上二个按钮。
+2.从MGD.apk里反编译出NativeMGDLibrary,FeatureAuthorisation,IPropertiesProvider保持原来的包名，并加入这个模块。
+3.反编译UnityPlayerActivity，修改onCreate方法，使Unity先不运行。
+    调用
+        NativeMGDLibrary.startDaemonService(this.authorisationCallback, this.exitCodeCallback, sendTraceDataToHost, headlessMode, paramIntent.getExtras());
+    启动Daemon。
+
+4.在之前的一个按钮的onClick事件调用System.loadLibrary("MGD");来加载Interceptor。
+5.在另外一个按钮的onClick事件调用运行Unity的代码。
+注意:由于Demon和Interceptor初始化需要一定时间，在点按钮的时候要等一下。
+---------------------------------------------------------------------
+更新：
+上述方法最终有数据显示在PC的MGD里但是不能点"Toggle Fragment Count"。
+看Android的日志发现libMGD在没有被点击的时候被加载了。
+再看到UnityPlayer在构造函数里调用了NativeLoader.load,再通过JNI调用libMain.so里的Load。
+这个Load加载libUnity.so和libMGD.so。
+解决这个的办法:
+1.实现一个UnityPlayer，还要测试Unity的初始化流程，太麻烦没有去尝试。
+2.直接给libMGD改名。正好Mail的新版调试工具不在叫MGD，而是AGA，unity还没有更新。这里正好使用新版本调试工具。
+
+意外发现：
+    非Root方式在不是Mali的gpu的Android机上也可以使用Arm的调试工具。
