@@ -1,0 +1,29 @@
+可以看到push这个命令有最复杂的参数，简单说明下：
+
+    -p|–patch
+    交互式stash，每个修改逐个确认，之后不停按y/n来选择要stash的修改
+
+    -k|–[no-]keep-index
+    已经git add的文件stash之后修改还保留
+
+    -q|–quiet
+
+    -u|–include-untracked
+    新创建的文件直接git stash是不会被stash的，加上这个就可以
+
+    -a|–all
+    比上一个-u更强，连被git ignore的文件都可以stash
+
+    -m|–message <message>
+    指定一些说明性文字
+
+    [--] [<pathspec>…?]
+    指定stash的文件，但是如果其他文件有被git add过，也会被同时stash。不过只有指定的文件的修改会从工作副本中clean掉。
+
+那么stash部分文件就有两种方式：
+    使用-p进行交互式操作（适合需要具体到修改的时候，例如某个文件中部分需要stash部分不需要）
+
+    通过在命令后面直接指定文件（一般情况肯定这个方便）
+
+# 指定说明信息并stash所有java文件的修改
+$ git stash push -m "this is a partly stash test" **/*.java
