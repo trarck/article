@@ -1,0 +1,28 @@
+一、使用symbolicatecrash进行还原
+
+    1.找到symbolicatecrash文件
+    位置：
+    /Applications/Xcode.app/Contents/SharedFrameworks/DTDeviceKitBase.framework/Versions/A/Resources/symbolicatecrash
+    可以使用查找
+    find /Applications/Xcode.app -name symbolicatecrash -type f
+
+   2.将 .dSYM .app .crash symbolicatecrash 放在同一个文件夹
+
+   3.执行代码
+    ./symbolicatecrash 上步骤的.crash 上步骤的.dSYM > 结果(任意名字).crash
+
+    4. 能会提醒DEVELOPER_DIR 未设置
+
+        export DEVELOPER_DIR=”/Applications/Xcode.app/Contents/Developer/”
+
+二、使用atos命令行
+如：
+0 QQ 0x0000000101fde690 0x1000dc000 + 32515728
+
+代表的是：栈号 模块名 函数地址 模块地址 +偏移地址
+
+atos用法：
+atos-o 符号表drawf文件路径 -arch 架构 -l 模块地址 函数地址
+如：
+
+atos -o QQ -arch arm64 -l 0x1000dc000 0x0000000101fde690
