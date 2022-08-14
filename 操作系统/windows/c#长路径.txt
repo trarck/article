@@ -1,0 +1,22 @@
+我正在使用的应用程序需要处理文件名/路径名非常长的文件。这是一个.Net 4.6应用程序，因此我已经实现了4.6.2之前的变通办法，以允许\\？\语法概述为here和here。
+
+这是我用来启用该功能的代码（我无法修改app.config，因此必须在代码中进行设置）：
+
+var type = Type.GetType("System.AppContext");
+if (type != null)
+{
+    AppContext.SetSwitch("Switch.System.IO.UseLegacyPathHandling", false);
+    AppContext.SetSwitch("Switch.System.IO.BlockLongPaths", false);
+
+    var switchType = Type.GetType("System.AppContextSwitches");
+    if (switchType != null)
+    {
+        // We also have to reach into System.AppContextSwitches and manually update the cached private versions of these properties (don't ask me why):
+
+        var legacyField = switchType.GetField("_useLegacyPathHandling", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+        legacyField?.SetValue(null, (Int32)(-1)); // <- caching uses 0 to indicate no value, -1 for false, 1 for true.
+
+        var blockingField = switchType.GetField("_blockLongPaths", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+        blockingField?.SetValue(null, (Int32)(-1)); // <- caching uses 0 to indicate no value, -1 for false, 1 for true.
+    }
+}
