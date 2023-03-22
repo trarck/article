@@ -1,0 +1,62 @@
+一、二个AssetBundle加载的类。
+struct SerializedObjectIdentifier
+{
+    int serializedFileIndex;
+    long localIdentifierInFile;
+}
+
+struct ObjectLoadData
+{
+    SerializedObjectIdentifier identifier; //16
+    int instanceID;  //8
+}
+
+二、示例
+
+150118
+		serializedFileIndex	465	int
+		localIdentifierInFile	-311175049897660433	__int64
+
+
+(SerializedObjectIdentifier *)(0x0000024b00000a60+24*7)
+(ObjectLoadData *)(0x0000024b00000a60+24*7)
+
++		((std::_Tree_node<std::pair<int const ,SerializedObjectIdentifier>,void *>*)0x0000024b40000608)->_Myval,view(MapHelper)	{serializedFileIndex=0x00000001 localIdentifierInFile=0x0000000000003e80 }	std::pair<int const ,SerializedObjectIdentifier>
+
+
+
+0x0000024AC0C7BF20
+ 
+0x0000024B400006E8
+024b40000528
+
+(StreamNameSpace*)(0x0000024b80283f30+32*465)
+
+75720
+0x8873c 
+
+0xfbae7bf0d7e2afef
+
+{m_ptr= m_label={m_RootReferenceWithSalt={m_Salt=0x00000000 m_RootReferenceIndex=0xffffffff } ...} ...}
+8 A762
+2168FB8714C26BD0
+
+10001010011101100010
+
+     8cccdbe3ffffffff
+     0x00024a62
+     >	UnityPlayer.dll!PersistentManager::LoadObjectsThreaded(const int * instanceIDs=0x0000024b41931f20, int size=0x00000025, LoadProgress & loadProgress={...}, bool sortInstanceIDsForLoading=false, PersistentManager::LockFlags lockedFlags=kMutexLock) 行 1854	C++
+ 	UnityPlayer.dll!ProcessAssetBundleEntries(AssetBundle & bundle={...}, const std::pair<std::_Tree_iterator<std::_Tree_val<std::_Tree_simple_types<std::pair<core::basic_string<char,core::StringStorageDefault<char>> const ,AssetBundle::AssetInfo>>>>,std::_Tree_iterator<std::_Tree_val<std::_Tree_simple_types<std::pair<core::basic_string<char,core::StringStorageDefault<char>> const ,AssetBundle::AssetInfo>>>>> & entries, ScriptingSystemTypeObjectPtr systemTypeInstance={...}, dynamic_array<Object *,0> & output={...}, bool stopAfterOne=true) 行 52	C++
+
+0x0000024B80000000  e8 66 1a 29 ff 7f 00 00 00 00 00 00 4c 02 00 00  ?f.)........L...
+0x0000024B80000010  00 00 00 00 00 00 00 00 e0 ff 9f 80 4b 02 00 00  ........?.?€K...
+0x0000024B80000020  e0 ff 0f 80 4b 02 00 00 58 00 00 80 4b 02 00 00  ?..€K...X..€K...
+0x0000024B80000030  0a 00 00 00 00 00 00 00 38 00 00 80 4b 02 00 00  ........8..€K...
+0x0000024B80000040  38 00 00 80 4b 02 00 00 00 00 00 00 00 00 00 00  8..€K...........
+0x0000024B80000050  00 00 00 10 00 00 00 00 ff ff ff ff ff ff ff ff  ................
+
+024c00000000
+
+(SerializedObjectIdentifier *)0x0000024b00000a60
+
+(SerializedObjectIdentifier *)(0x0000024b00000a60+288)

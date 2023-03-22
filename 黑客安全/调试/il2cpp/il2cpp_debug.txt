@@ -1,0 +1,10 @@
+1.通过c#获取c++对象
+     c# Object.___m_CachedPtr_0
+
+(GameObject::ComponentPair*)(*((dynamic_array_detail::dynamic_array_data*)&((Unity::Component*)0x0000017a2cd58c10)->m_GameObject.m_Ptr->m_Component)).m_ptr
+
+2.通过c++获取c#对象
+     C++ Object.m_MonoReference.m_Object.m_Target
+
+3.获取Hierarchy树上对象信息
+  通过某个GameObject对像，获取c++类，通过c++的GameObject获取Transform,通过Transform获取父结点和子结点，进而获取整个树结构。
