@@ -1,0 +1,18 @@
+一、原因：
+由于unity editor下显示inspector时，会显示资源的assetbundle name。这个功能实际用不上。
+即在AssetBundleNameGUI.cs中的OnAssetBundleNameGUI方法里调用AssetBundlePopup方法。
+AssetBundlePopup中有获取所有资源的assetbundle name的代码:
+string[] assetBundles = isVariant ? AssetDatabase.GetAllAssetBundleVariants() : AssetDatabase.GetAllAssetBundleNamesWithoutVariant();
+资源很大时，会导致很卡。
+二、解决方法：
+2019引擎：
+dnSpy中打开UnityEditor.dll,找到DrawPreviewAndLabels调用OnAssetBundleNameGUI的地方(也可以分析出调用OnAssetBundleNameGUI的地方)。
+把检查要不要显示assetbundle name的变量强制设置成false。
+具体方法：
+1. 在反编译后的c#代码的赋值变量的地方，选择"编辑il指令"。
+2. 找到ldloc.s V_5的地方，选择使用"Nop替换"。
+3. 在替换后的第2个nop，替换成ldc.i4.0。
+4. 保存看c#代码，是不是变成变量成false。
+5. 保存dll的修改。
+说明：
+由于之前的ldloc.s 的指令占用2个字节，ldc.i4.0占用一个字节，要把少的字节用nop占用。
