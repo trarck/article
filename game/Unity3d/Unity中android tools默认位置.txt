@@ -1,0 +1,12 @@
+android相关tools,
+如果不设置工程里的路径，可以用引擎默认位置。
+java:
+   1. UnityEngine/Editor/../../../artifacts/OpenJDK
+   2. Editor/Data/PlaybackEngines/AndroidPlayer/OpenJDK
+gradle:Editor/Data/Tools/Gradle
+sdk:
+   1. UnityEngine/Editor/../../../External/Android/NonRedistributable/sdk/builds
+   2. Editor/Data/PlaybackEngines/AndroidPlayer/SDK
+ndk:
+   1. UnityEngine/Editor/../../../External/Android/NonRedistributable/ndk/builds
+   2. Editor/Data/PlaybackEngines/AndroidPlayer/NDK
