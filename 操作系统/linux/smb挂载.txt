@@ -1,0 +1,1 @@
+sudo mount -t cifs -o username=smb用户名,password=sbm密码,iocharset=utf8,uid=linux用户,gid=linux用户gid,file_mode=0776,dir_mode=0776,_netdev,x-systemd.automount //xxx.xxx.xxx.xxx/yyy /mnt/yyy
